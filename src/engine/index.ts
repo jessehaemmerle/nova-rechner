@@ -9,3 +9,13 @@ export {
   type NovaErgebnis,
   type NovaKuerzung,
 } from './nova';
+export {
+  berechneNovaGebraucht,
+  rechtslageStichtag,
+  volleJahre,
+  wertminderungsFaktor,
+  type GebrauchtKontext,
+  type Herkunft,
+  type NovaGebrauchtErgebnis,
+  type RechtslageEingabe,
+} from './wertminderung';
