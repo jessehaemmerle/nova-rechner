@@ -100,9 +100,9 @@ function verweis(e: NovaEingabe, p: VerweisPeriode, prot: Protokoll): NovaErgebn
   const vorspann: string[] = [`${p.docId}: N1 rechnet nach den Pkw-Zeilen (${pkw.docId}).`];
   if (b.art === 'zolltarif') {
     vorspann.push(`Einreihung KN ${b.position} laut Eingabe bestätigt.`);
-    if (p.einreihungStatus !== 'belegt') {
-      r.warnungen.push(`Einreihung in KN ${b.position} ist eine Einzelfallfrage (Status: ${p.einreihungStatus}).`);
-    }
+    const p2: Protokoll = { status: r.status, hinweise: r.hinweise, warnungen: r.warnungen };
+    regelAngewendet(p2, p.einreihungStatus, `Einreihung in KN ${b.position} ist eine Einzelfallfrage`);
+    r.status = p2.status;
   } else {
     vorspann.push(
       `Steuerbar als Kfz zur Personenbeförderung mit ${b.sitzplaetzeMin}–${b.sitzplaetzeMax} Sitzplätzen, ≤ ${b.hoechstgewichtKg} kg. Nicht steuerbar: ${p.nichtSteuerbar.join('; ')}.`,

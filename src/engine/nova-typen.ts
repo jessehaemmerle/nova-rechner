@@ -136,7 +136,16 @@ export function kleinkraftradErgebnis(
   periodeId: string,
   prot: Protokoll,
 ): NovaErgebnis | null {
-  if (!kk || e.hubraum === undefined || e.hubraum > kk.bisCm3) return null;
+  if (!kk) return null;
+  if (e.hubraum === undefined) {
+    if (e.art === 'motorrad') {
+      throw new EingabeFehler(
+        `Für ${periodeId} fehlt der Hubraum (cm³): ohne ihn ist nicht prüfbar, ob die Kleinkraftrad-Regel (≤ ${kk.bisCm3} cm³) greift.`,
+      );
+    }
+    return null;
+  }
+  if (e.hubraum > kk.bisCm3) return null;
   const nichtSteuerbar = kk.folge === 'nicht_steuerbar';
   prot.hinweise.push(
     `Hubraum ${zahl(e.hubraum)} cm³ ≤ ${kk.bisCm3} cm³: ${nichtSteuerbar ? 'kein Kraftfahrzeug iSd NoVAG, keine NoVA' : 'Steuersatz 0 %'}.`,

@@ -483,6 +483,9 @@ describe('Golden-Tests N1', () => {
     const r = berechneNova({ art: 'n1', bg: 22000, stichtag: '2019-06-01', co2Nefz: 128, zolltarif8703: true });
     expect(r.periodeId).toBe('PKW-2016');
     expect(r.betrag).toBe(1460);
+    // Einreihung im Einzelfall nicht verifiziert → schlechtester Status (PKW-2016 selbst ist belegt)
+    expect(r.status).toBe('nicht_verifiziert');
+    expect(r.warnungen.join(' ')).toMatch(/Einreihung in KN 8703/);
     expect(r.hinweise.join(' ')).toMatch(/N1-bis2021/);
   });
 
@@ -577,6 +580,35 @@ describe('Golden-Tests Motorrad', () => {
       expect(r.hinweise.join(' ')).toMatch(/125 cm³/);
     },
   );
+
+  it.each([
+    ['2026-06-01', 'MR-2026'],
+    ['2028-06-01', 'MR-2028'],
+    ['2022-06-01', 'MR-2021b'],
+    ['2020-06-01', 'MR-2020'],
+  ])('Motorrad am %s (%s) mit WMTC, aber ohne Hubraum → EingabeFehler (Kleinkraftrad nicht prüfbar)', (stichtag, docId) => {
+    // Sonde aus dem Review: WMTC 60 ergäbe 2026 sonst Satz 2 %, 80 € – auch für ein ≤ 125-cm³-Rad
+    expect(() => berechneNova(mr(stichtag, { co2Wmtc: 60 }, 4000))).toThrow(EingabeFehler);
+    expect(() => berechneNova(mr(stichtag, { co2Wmtc: 60 }, 4000))).toThrow(/Hubraum/);
+    expect(() => berechneNova(mr(stichtag, { co2Wmtc: 60 }, 4000))).toThrow(new RegExp(docId));
+  });
+
+  it.each(['2010-01-01', '2016-01-01'])(
+    'Motorrad am %s (Hubraum-Formel) ohne Hubraum → EingabeFehler',
+    (stichtag) => {
+      expect(() => berechneNova(mr(stichtag, {}, 4000))).toThrow(EingabeFehler);
+      expect(() => berechneNova(mr(stichtag, {}, 4000))).toThrow(/Hubraum/);
+    },
+  );
+
+  it('Motorrad 2026 mit Hubraum 126 und WMTC 60 → besteuert (2 %, 80 €); mit 125 cm³ → 0', () => {
+    const r = berechneNova(mr('2026-06-01', { co2Wmtc: 60, hubraum: 126 }, 4000));
+    expect(r.satzProzent).toBe(2);
+    expect(r.betrag).toBe(80);
+    const k = berechneNova(mr('2026-06-01', { co2Wmtc: 60, hubraum: 125 }, 4000));
+    expect(k.betrag).toBe(0);
+    expect(k.befreit).toBe(true);
+  });
 
   it('MR-2026 ohne WMTC: Hubraum-Formel, max. 30 %', () => {
     const r = berechneNova(mr('2026-06-01', { hubraum: 2000 }));
