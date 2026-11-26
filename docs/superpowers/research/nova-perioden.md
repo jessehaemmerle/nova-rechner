@@ -50,12 +50,20 @@ Ergänzend gelesen: § 15 idF NOR40194181 (2017-07-18 bis 2019-10-29) für Abs. 
 - **Rundung des Steuersatzes:** „auf volle Prozentsätze auf- bzw. abzurunden" (R1, R4, R10–R14); BMF: „kaufmännisch gerundet" → halbe Prozent werden aufgerundet (ROUND_HALF_UP). Status: belegt.
 - **Mindeststeuersatz 0 %:** Für die Verbrauchsformel ausdrücklich (R1/R4: „Bei einem Durchschnittsverbrauch von nicht mehr als drei Litern … 0 %"). Für die CO2-Formeln ist ein negativer Satz nicht ausdrücklich geregelt; die Engine setzt den Satz auf min. 0 % (Annahme, aus „Die Berechnung kann zu keiner Steuergutschrift führen" abgeleitet). Status der Annahme: `nicht_verifiziert` (Wortlaut regelt nur das Ergebnis, nicht den Satz).
 - **Keine Steuergutschrift:** NoVA ≥ 0 (R3/R5–R9 § 6a Abs. 2; R10 § 6 Abs. 3; R11–R14 § 6 Abs. 2). belegt.
-- **Höchststeuersatz** begrenzt nur den Satz; Malus wird danach addiert (Formelaufbau BMF, alle Perioden). belegt.
+- **Höchststeuersatz** begrenzt nur den Satz; Malus wird danach addiert. Ab 2014-03-01 `belegt` (Gesetzeswortlaut: „Der Höchststeuersatz beträgt …", BMF-Formeln).
+  **Vor 2014-03-01 (PKW-2008a bis PKW-2013, MR-2008)** lautet der Text anders. R1/R4 § 6 Abs. 3 Satz 2: „Die errechneten Steuersätze sind auf volle Prozentsätze auf- oder abzurunden. **Die Abgabe beträgt höchstens 16% der Bemessungsgrundlage.**" Wörtlich ist das eine Obergrenze für den **Betrag**, nicht nur für den Satz. Das Dokument (Tabellen und Beispiele) folgt der Lesart der BMF-Seiten 1996–2008 und 2008–2014: „Höchststeuersatz 16 Prozent", „Bemessungsgrundlage x Steuersatz = NoVA-Grundbetrag", danach Erhöhungsbetrag und Bonus/Malus. Diese Lesart ist systematisch gestützt: § 6a Abs. 1 ändert die „gemäß § 6 … errechnete Steuer" erst nachträglich (R3: „Abs. 2 bis 6", R5–R9: „Abs. 2 bis 5"). Ob die 16-%-Grenze den Betrag nach Erhöhungsbetrag (§ 6 Abs. 6, R1/R4) und nach Bonus/Malus (§ 6a) begrenzt, ist **nicht belegt** → `nicht_verifiziert` (siehe Abschnitt 7). Bei Fahrzeugen, die nach Verbrauch unter 16 % liegen, aber hohen Malus haben (z. B. B-PKW-2011: 9.225 € = 23 % der BG), weicht das Ergebnis je nach Lesart ab.
 - **Rechtslage-Stichtag (Grundregel):** Zeitpunkt der Tatbestandsverwirklichung (Lieferung bzw. Zulassung im Inland). Drittland: Zulassung im Inland bzw. Lieferung durch inländischen Händler; volle Malus/Abzugsposten ohne Wertentwicklung (BMF „Steuersatz"). belegt.
 - **EU/EWR-Gebrauchtimport:** Rechtslage im Zeitpunkt der **erstmaligen Zulassung im übrigen Unionsgebiet** (R14 § 6 Abs. 8; früher R10 § 6 Abs. 6; § 15 Abs. 20 für Erstzulassung vor 01.01.2020). Bonus/Malus **und** Abzugsposten werden um die Wertentwicklung gekürzt (R14 § 6 Abs. 8). Nach BMF „Steuersatz":
   - Neuwagenwert bekannt: (Bonus/Malus − Abzugsposten) × (aktuelle BG / Neuwagenwert).
   - Neuwagenwert unbekannt: Achtelung, Faktor = max(1/8, 1 − volle Jahre seit Erstzulassung / 8).
-  - Die Kürzung wird lt. BMF-Beispiel auf die **Summe** „Malus/Abzugsposten" (Saldo) angewendet, nicht getrennt. belegt (BMF-Beispiel, siehe Beispiel E1).
+  - Die Kürzung wird lt. BMF-Beispiel auf die **Summe** „Malus/Abzugsposten" (Saldo) angewendet, nicht getrennt. belegt (BMF-Beispiel, siehe Beispiel E1; das Beispiel nutzt die Rechtslage 2014–2019).
+  - **Geltungsbereich je Erstzulassungsperiode** (was gekürzt wird):
+
+    | Erstzulassung in | Gekürzt wird | Status | Begründung |
+    |---|---|---|---|
+    | PKW-2020 ff. (ab 2020-01-01) | Saldo Malus − Abzugsposten 350 € | `belegt` | R14 § 6 Abs. 8 („Bonus-Malus-Berechnung und den Abzugsbetrag"); BMF-Periodenseiten ab 2020: „Malusbetrages und beim Abzugsposten" |
+    | PKW-2014 bis PKW-2016 (2014-03-01 – 2019-12-31) | Saldo Malus − Abzugsposten (bzw. Umweltbonus statt AP) | Malus/AP `belegt`; Umweltbonus `nicht_verifiziert` | R14 § 6 Abs. 8; BMF-Beispiel E1 kürzt Malus und AP gemeinsam; BMF-Seite 2014–2019: „Bonus- bzw. Malusbetrages und beim Abzugsposten". Ob der Umweltbonus (600 €) als „Bonus" gekürzt wird, ist nicht durch ein Beispiel belegt. Hinweis: Der historische Text R10 § 6 Abs. 6 nannte nur die „Bonus-Malus-Berechnung"; für Importe ab heute gilt aber R14 Abs. 8 |
+    | PKW-2008a bis PKW-2013 (2008-01-01 – 2014-02-28) | **nur Bonus/Malus**; einen Abzugsposten gab es nicht. Die Saldo-Regel ab 2014 bzw. 2025 darf **nicht** mit einem Abzugsposten angewendet werden | `nicht_verifiziert` | BMF-Seiten 1996–2008 und 2008–2014: „Bonus- bzw. Malusbetrages" (ohne Abzugsposten). Die historischen Fassungen weichen ab: R3/R5 (bis 15.6.2010) haben keine Wertentwicklungsklausel, R6–R9 § 6a Abs. 6 kürzen **nur den Malus**. Für Importe ab heute verweist R14 Abs. 8 auf die „Bonus-Malus-Berechnung". Offen ist, welche Beträge als „Bonus/Malus" gelten: der CO2-Bonus/-Malus sicher; der NOx/Partikel-Bonus, der Ökobonus, der Partikel-Malus (+300 €) und der kW-Malus sind nicht belegt. Offen ist auch die Reihenfolge zum Erhöhungsbetrag. |
 - **Übergangsregel Jahreswechsel (ab 2022):** Kaufvertrag vor 1. Dezember eines Jahres, Lieferung/ig. Erwerb vor 1. April des Folgejahres → Werte bis 31. Dezember weiter anwendbar (R12–R14 § 6 Abs. 7; BMF). belegt. **Abweichende Übergangsregeln an Reformstichtagen** (R20 § 15): 1.3.2014: Vertrag vor 16.2.2014, Lieferung vor 1.10.2014 (Abs. 15); 1.1.2020: Vertrag vor 1.12.2019, Lieferung vor 1.6.2020 (Abs. 21); 1.7.2021: Vertrag vor 1.6.2021, Lieferung vor 1.5.2022 (Abs. 25); 1.7.2025: Vertrag vor 1.7.2025, Lieferung vor 31.12.2025 (Abs. 27). belegt.
 - **Befreiung CO2 = 0 g/km** (Elektro/Wasserstoff): nicht Teil dieser Recherche (§ 3 NoVAG nicht geprüft); Spezifikation 5.2 übernimmt sie aus BMF „Befreiung". Status hier: nicht geprüft.
 
@@ -141,7 +149,7 @@ Achtung: Die BMF-Seiten sagen „In beiden Fällen beträgt der Mindeststeuersat
 
 ## 5. Rechenbeispiele (Golden-Test-Kandidaten)
 
-Konvention: BG in EUR netto; „round" = kaufmännisch; Drittland bzw. Neufahrzeug, d. h. **keine** Wertentwicklung, sofern nicht anders angegeben. Jedes Beispiel wurde zweimal von Hand gerechnet und zusätzlich mit einem unabhängigen Skript geprüft (Abweichungen: keine).
+Konvention: BG in EUR netto; „round" = kaufmännisch; Drittland bzw. Neufahrzeug, d. h. **keine** Wertentwicklung, sofern nicht anders angegeben. Beispiele vor 2014-03-01 folgen der BMF-Lesart der 16-%-Grenze (Grenze für den Satz, nicht für den Endbetrag; siehe 0.2); bei einer Betragsgrenze wären B-PKW-2011 (9.225 € > 16 % × 40.000 = 6.400 €) und die Varianten mit Erhöhungsbetrag andere Werte. Kein Beispiel vor 2014 nutzt die Wertentwicklung. Jedes Beispiel wurde zweimal von Hand gerechnet und zusätzlich mit einem unabhängigen Skript geprüft (Abweichungen: keine).
 
 ### Pkw
 
@@ -275,3 +283,6 @@ Ergebnis: Von 2008-01-01 bis 2029-12-31 gibt es je Fahrzeugart weder Lücken noc
 | Steuersatz min. 0 % bei CO2-Formeln | nicht ausdrücklich geregelt (Annahme) |
 | Ab 2030 (alle Arten) | BMF listet nicht; Gesetz setzt Absenkung rechnerisch fort → keine Periode, Warnung |
 | Vor 2008 | außerhalb des Auftrags (Spezifikation 11a: Warnung) |
+| 16-%-Grenze vor 2014-03-01 (PKW-2008a bis PKW-2013, MR-2008) | R1/R4 § 6 Abs. 3: „Die Abgabe beträgt höchstens 16% der Bemessungsgrundlage" ist wörtlich eine Betragsgrenze. Dokument und Beispiele folgen der BMF-Lesart (Grenze nur für den Satz bzw. Grundbetrag). Offen ist, wie die Grenze mit Erhöhungsbetrag und Bonus/Malus zusammenwirkt (siehe 0.2) |
+| Wertentwicklung bei EU-Import, Erstzulassung vor 2014-03-01 | nur Bonus/Malus (kein Abzugsposten); welche Bonus-/Malusarten gekürzt werden und die Reihenfolge zum Erhöhungsbetrag sind offen (siehe 0.2) |
+| Wertentwicklung, Umweltbonus 2014–2015 | ob der Umweltbonus (statt Abzugsposten) gekürzt wird, ist nicht belegt |
