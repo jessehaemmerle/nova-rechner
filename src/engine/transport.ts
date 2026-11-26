@@ -66,7 +66,8 @@ export function richtwertFracht(route: RouteId, art: FrachtArt, klasse: Fahrzeug
   return {
     ...BELEG_RICHTWERT,
     satz: betrag,
-    hinweis: 'satz = Betrag in EUR (Seefracht je Fahrzeug), keine Prozentangabe',
+    einheit: 'eur',
+    hinweis: 'satz = Betrag in EUR (Seefracht je Fahrzeug), keine Prozentangabe (einheit: eur)',
   };
 }
 

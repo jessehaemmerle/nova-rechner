@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { EingabeFehler } from '../../src/engine/fehler';
+import { EUST_SAETZE } from '../../src/regelwerk/ust-saetze';
+import { ZOLLSAETZE } from '../../src/regelwerk/zoll';
 import {
   ROUTEN,
   richtwertFracht,
@@ -51,6 +53,19 @@ describe('richtwertFracht', () => {
           expect(w.satz).toBeGreaterThan(0);
         }
       }
+    }
+  });
+
+  it("kennzeichnet den EUR-Betrag mit einheit 'eur', Zoll-/EUSt-Sätze bleiben Anteile", () => {
+    for (const r of ROUTEN) {
+      for (const art of ['roro', 'container'] as const) {
+        for (const klasse of ['klein', 'mittel', 'gross'] as const) {
+          expect(richtwertFracht(r.id, art, klasse).einheit).toBe('eur');
+        }
+      }
+    }
+    for (const w of [...Object.values(ZOLLSAETZE), ...Object.values(EUST_SAETZE)]) {
+      expect([undefined, 'anteil']).toContain(w.einheit);
     }
   });
 

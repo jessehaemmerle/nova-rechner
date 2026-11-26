@@ -249,7 +249,9 @@ export interface WertentwicklungsUmfang extends Beleg {
 
 /** Wert mit Beleg (Zoll, EUSt, allgemeine Konstanten). */
 export interface Wert extends Beleg {
-  /** Anteil, z. B. 0.1 = 10 %. */
+  /** Anteil, z. B. 0.1 = 10 %; oder EUR-Betrag, wenn `einheit === 'eur'`. */
   satz: number;
+  /** Einheit von `satz`; fehlt sie, gilt 'anteil'. */
+  einheit?: 'anteil' | 'eur';
   hinweis?: string;
 }
