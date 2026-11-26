@@ -9,9 +9,8 @@ import {
   HINWEIS_MINDESTSATZ_CO2,
   HINWEIS_VOR_2014,
   HOECHST_16_BETRAGSWORTLAUT,
-  OHNE_CO2_KW,
-  OHNE_CO2_VERBRAUCH,
   PERSONENBEFOERDERUNG_4_9_SITZE,
+  QUELLE_R10_UEBERTRAGEN,
   STAND,
   UEBERGANG_2014,
   UEBERGANG_2020,
@@ -19,9 +18,12 @@ import {
   UEBERGANG_2025B,
   WOHNMOBIL_SA_2020,
   WOHNMOBIL_SA_AB_2021B,
+  beleg,
   erhoehungsbetrag,
   hoechstsatz,
   jahreswechsel,
+  ohneCo2Kw,
+  ohneCo2Verbrauch,
 } from './nova-perioden-gemeinsam';
 import type { Co2Periode, VerbrauchPeriode } from './types';
 
@@ -58,13 +60,19 @@ const BONUS_MALUS_6A = {
 } as const;
 
 /** Ab PKW-2009 (R4/R5): Ersatzwerte ohne CO2 bzw. ohne Verbrauch, Erdgas-Umrechnung. */
+const BELEG_ERSATZ_AB_2009 = beleg(
+  'NoVAG § 6 idF R4 (NOR40105896), § 6a idF R5 (NOR40105897); Recherche-Dokument PKW-2009 (PKW-2010/2011/2013: „wie PKW-2009" bzw. „wie PKW-2011")',
+  'nicht_verifiziert',
+);
+
 const ERSATZ_AB_2009 = {
-  ohneCo2: { art: 'verbrauch', faktorBenzinUndAndere: 25, faktorDiesel: 28 },
+  ohneCo2: { art: 'verbrauch', faktorBenzinUndAndere: 25, faktorDiesel: 28, ...BELEG_ERSATZ_AB_2009 },
   ohneVerbrauch: {
     art: 'verbrauch_aus_kw',
     kwDivisor: 10,
     zuschlagBenzinUndAndere: 3,
     zuschlagDiesel: 2,
+    ...BELEG_ERSATZ_AB_2009,
   },
   erdgasNm3JeLiterBenzin: 1,
   erhoehungsbetrag: erhoehungsbetrag('grundbetrag_und_bonus_malus'),
@@ -81,7 +89,11 @@ const PKW_2008A: VerbrauchPeriode = {
   quelle:
     'NoVAG § 6 idF R1 (NOR40025126), § 14a idF R2 (NOR40090577), § 2 idF R15 (NOR12054297); BMF „Rechtslage von 1. Juni 1996 bis 30. Juni 2008"',
   erhoehungsbetrag: erhoehungsbetrag('grundbetrag'),
-  ohneVerbrauch: { art: 'satz_aus_kw', faktor: 0.2 },
+  ohneVerbrauch: {
+    art: 'satz_aus_kw',
+    faktor: 0.2,
+    ...beleg('NoVAG § 6 idF R1 (NOR40025126); Recherche-Dokument PKW-2008a', 'nicht_verifiziert'),
+  },
   erdgasNm3JeLiterBenzin: null,
   co2Malus: [],
   co2Bonus: null,
@@ -113,11 +125,22 @@ const PKW_2008B: VerbrauchPeriode = {
   quelle:
     'NoVAG § 6 idF R1 (NOR40025126), § 6a idF R3 (NOR40096512), § 2 idF R15 (NOR12054297); BMF „Rechtslage von 1. Juli 2008 bis 28. Februar 2014"',
   erhoehungsbetrag: erhoehungsbetrag('grundbetrag'),
-  // Im Dokument nur bei PKW-2008a genannt; § 6 idF R1 gilt unverändert bis 2009-06-17.
-  ohneVerbrauch: { art: 'satz_aus_kw', faktor: 0.2 },
+  ohneVerbrauch: {
+    art: 'satz_aus_kw',
+    faktor: 0.2,
+    ...beleg(
+      'aus R1 (§ 6 idF NOR40025126, gilt bis 17.06.2009) übertragen; im Recherche-Dokument nur für PKW-2008a ausdrücklich genannt',
+      'nicht_verifiziert',
+    ),
+  },
   erdgasNm3JeLiterBenzin: null,
   co2Malus: [{ schwelleGramm: 180, euroProGramm: 25 }],
-  ohneCo2: { art: 'kw_malus', euroProKw: 20, abKw: 100 },
+  ohneCo2: {
+    art: 'kw_malus',
+    euroProKw: 20,
+    abKw: 100,
+    ...beleg('NoVAG § 6a idF R3 (NOR40096512); Recherche-Dokument PKW-2008b', 'nicht_verifiziert'),
+  },
   hinweise: [
     ...HINWEIS_VOR_2014,
     HINWEIS_BONUS_EINGABEN,
@@ -219,7 +242,6 @@ const NEFZ_ZEIT = {
   abzugswert: 90,
   hoechstsatz: hoechstsatz(32),
   malus: [{ schwelleGramm: 250, euroProGramm: 20 }],
-  ohneCo2: [OHNE_CO2_VERBRAUCH, OHNE_CO2_KW],
   wohnmobilSA: null,
 } as const;
 
@@ -229,6 +251,17 @@ const QUELLE_R10 = `NoVAG § 6 idF R10 (NOR40161297); BMF „Rechtslage von 1. M
 const HINWEIS_ERSATZ_R10 =
   'Ohne CO2: Verbrauch × 25 (Benzin/andere) bzw. × 28 (Diesel), sonst 2 × kW (im Dokument bei PKW-2014 genannt; § 6 idF R10 gilt bis 2019).';
 
+/** PKW-2014: im Recherche-Dokument ausdrücklich genannt → belegt. */
+const BELEG_OHNE_CO2_2014 = beleg('NoVAG § 6 idF R10 (NOR40161297); Recherche-Dokument PKW-2014');
+const OHNE_CO2_2014 = [ohneCo2Verbrauch(BELEG_OHNE_CO2_2014), ohneCo2Kw(BELEG_OHNE_CO2_2014)];
+
+/** PKW-2015/2016: aus R10 übertragen, im Dokument nicht genannt → nicht_verifiziert. */
+const BELEG_OHNE_CO2_UEBERTRAGEN = beleg(QUELLE_R10_UEBERTRAGEN, 'nicht_verifiziert');
+const OHNE_CO2_2015_2016 = [
+  ohneCo2Verbrauch(BELEG_OHNE_CO2_UEBERTRAGEN),
+  ohneCo2Kw(BELEG_OHNE_CO2_UEBERTRAGEN),
+];
+
 const PKW_2014: Co2Periode = {
   ...NEFZ_ZEIT,
   docId: 'PKW-2014',
@@ -237,6 +270,7 @@ const PKW_2014: Co2Periode = {
   quelle: QUELLE_R10,
   abzugsposten: { dieselEuro: 350, andereEuro: 450 },
   umweltbonus: UMWELTBONUS,
+  ohneCo2: OHNE_CO2_2014,
   uebergang: UEBERGANG_2014('PKW-2013'),
   hinweise: [
     'Umweltbonus max. 600 € (Hybrid, E85, Erdgas/Biogas, Flüssiggas, H2) statt Abzugsposten; kein Erhöhungsbetrag mehr.',
@@ -253,6 +287,7 @@ const PKW_2015: Co2Periode = {
   quelle: QUELLE_R10,
   abzugsposten: { dieselEuro: 400, andereEuro: 400 },
   umweltbonus: UMWELTBONUS,
+  ohneCo2: OHNE_CO2_2015_2016,
   uebergang: null,
   hinweise: [
     'Umweltbonus max. 600 € statt Abzugsposten (bis 31.12.2015).',
@@ -268,6 +303,7 @@ const PKW_2016: Co2Periode = {
   bis: '2019-12-31',
   quelle: QUELLE_R10,
   abzugsposten: { dieselEuro: 300, andereEuro: 300 },
+  ohneCo2: OHNE_CO2_2015_2016,
   uebergang: null,
   hinweise: [HINWEIS_ERSATZ_R10, HINWEIS_MINDESTSATZ_CO2],
 };
@@ -281,7 +317,11 @@ const WLTP_R11 = {
   hoechstsatz: hoechstsatz(32),
   malus: [{ schwelleGramm: 275, euroProGramm: 40 }],
   abzugsposten: AP_350,
-  ohneCo2: [OHNE_CO2_KW],
+  ohneCo2: [
+    ohneCo2Kw(
+      beleg('NoVAG § 6 idF R11 (NOR40218524); Recherche-Dokument PKW-2020 (PKW-2021a: „wie PKW-2020")'),
+    ),
+  ],
   wohnmobilSA: WOHNMOBIL_SA_2020,
   nefzSonderregel: {
     art: 'fruehere_rechtslage',
@@ -325,7 +365,13 @@ const WLTP_AB_2021B = {
   ...CO2_GRUNDLAGE,
   verfahren: 'WLTP',
   abzugsposten: AP_350,
-  ohneCo2: [OHNE_CO2_KW],
+  ohneCo2: [
+    ohneCo2Kw(
+      beleg(
+        'NoVAG § 6 Abs. 6 idF R12–R14; Recherche-Dokument PKW-2021b, PKW-2025b, PKW-2026b (übrige Zeilen „wie PKW-2021b" bzw. „wie PKW-2026b")',
+      ),
+    ),
+  ],
   wohnmobilSA: WOHNMOBIL_SA_AB_2021B,
   hinweise: [HINWEIS_MINDESTSATZ_CO2],
 } as const;

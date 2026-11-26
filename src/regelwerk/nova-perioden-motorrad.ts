@@ -6,14 +6,15 @@ import {
   HINWEIS_MINDESTSATZ_CO2,
   HINWEIS_VOR_2014,
   HOECHST_16_BETRAGSWORTLAUT,
-  OHNE_CO2_HUBRAUM,
   STAND,
   UEBERGANG_2014,
   UEBERGANG_2020,
   UEBERGANG_2021B,
+  beleg,
   erhoehungsbetrag,
   hoechstsatz,
   jahreswechsel,
+  ohneCo2Hubraum,
 } from './nova-perioden-gemeinsam';
 import type { Co2Periode, HubraumPeriode } from './types';
 
@@ -66,7 +67,13 @@ const MR_CO2 = {
   abzugsposten: null,
   umweltbonus: null,
   /** Ohne CO2-Wert: Hubraum-Formel, gedeckelt mit dem Höchstsatz der Periode. */
-  ohneCo2: [OHNE_CO2_HUBRAUM],
+  ohneCo2: [
+    ohneCo2Hubraum(
+      beleg(
+        'NoVAG § 6 idF R11 (NOR40218524) und R12 (NOR40230676); Recherche-Dokument MR-2020, MR-2021b (spätere Zeilen „wie MR-2021b")',
+      ),
+    ),
+  ],
   nefz127Ersatz: false,
   nefzSonderregel: null,
   wohnmobilSA: null,

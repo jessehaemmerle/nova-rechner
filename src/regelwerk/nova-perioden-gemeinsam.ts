@@ -3,10 +3,12 @@
  * `docs/superpowers/research/nova-perioden.md` (Abrufdatum 2026-11-26).
  */
 import type {
+  Beleg,
   BonusAntrieb,
   Erhoehungsbetrag,
   Hoechstsatz,
   OhneCo2Ersatz,
+  Status,
   Uebergang,
   WohnmobilSA,
 } from './types';
@@ -48,13 +50,24 @@ export function erhoehungsbetrag(basis: Erhoehungsbetrag['basis']): Erhoehungsbe
   };
 }
 
-export const OHNE_CO2_VERBRAUCH: OhneCo2Ersatz = {
-  art: 'verbrauch',
-  faktorBenzinUndAndere: 25,
-  faktorDiesel: 28,
-};
-export const OHNE_CO2_KW: OhneCo2Ersatz = { art: 'kw', faktor: 2 };
-export const OHNE_CO2_HUBRAUM: OhneCo2Ersatz = { art: 'hubraum', abzugCm3: 100, faktor: 0.02 };
+/** Beleg für eine einzelne Regel (Feld-Status, unabhängig vom Perioden-Status). */
+export function beleg(quelle: string, status: Status = 'belegt'): Beleg {
+  return { quelle, stand: STAND, status };
+}
+
+/** Quelltext für Regeln aus R10, die das Dokument nur bei PKW-2014 nennt. */
+export const QUELLE_R10_UEBERTRAGEN =
+  'aus R10 (einzige Fassung 01.03.2014–29.10.2019) übertragen; im Recherche-Dokument nur für PKW-2014 ausdrücklich genannt';
+
+export function ohneCo2Verbrauch(b: Beleg): OhneCo2Ersatz {
+  return { art: 'verbrauch', faktorBenzinUndAndere: 25, faktorDiesel: 28, ...b };
+}
+export function ohneCo2Kw(b: Beleg): OhneCo2Ersatz {
+  return { art: 'kw', faktor: 2, ...b };
+}
+export function ohneCo2Hubraum(b: Beleg): OhneCo2Ersatz {
+  return { art: 'hubraum', abzugCm3: 100, faktor: 0.02, ...b };
+}
 
 /** R11 Abs. 4 Z 4 (2020-01-01 – 2021-06-30). */
 export const WOHNMOBIL_SA_2020: WohnmobilSA = {

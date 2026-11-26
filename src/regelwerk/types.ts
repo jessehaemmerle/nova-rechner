@@ -76,14 +76,18 @@ export interface Erhoehungsbetrag {
   status: Status;
 }
 
-/** Ersatz, wenn kein CO2-Wert vorliegt (Reihenfolge = Rangfolge, „sonst"). */
+/**
+ * Ersatz, wenn kein CO2-Wert vorliegt (Reihenfolge = Rangfolge, „sonst").
+ * Jeder Eintrag trägt einen eigenen Beleg: Regeln, die das Recherche-Dokument nur für eine
+ * Nachbarperiode nennt und die übertragen wurden, sind `nicht_verifiziert`.
+ */
 export type OhneCo2Ersatz =
   /** CO2 = Verbrauch × Faktor */
-  | { art: 'verbrauch'; faktorBenzinUndAndere: number; faktorDiesel: number }
+  | ({ art: 'verbrauch'; faktorBenzinUndAndere: number; faktorDiesel: number } & Beleg)
   /** CO2 = kW × Faktor */
-  | { art: 'kw'; faktor: number }
+  | ({ art: 'kw'; faktor: number } & Beleg)
   /** Satz = (Hubraum − abzugCm3) × faktor, gedeckelt mit dem Höchstsatz der Periode */
-  | { art: 'hubraum'; abzugCm3: number; faktor: number };
+  | ({ art: 'hubraum'; abzugCm3: number; faktor: number } & Beleg);
 
 /** Sonderregel für Fahrzeuge, für die nur ein NEFZ-Wert vorliegt (auslaufende Serie). */
 export type NefzSonderregel =
@@ -136,10 +140,15 @@ export interface VerbrauchPeriode extends PeriodeBasis {
   /** Status der Untergrenze 0 % („nicht mehr als drei Liter … 0 %"). */
   mindestsatzNullStatus: Status;
   erhoehungsbetrag: Erhoehungsbetrag;
-  /** Ohne Verbrauchsnachweis. */
+  /** Ohne Verbrauchsnachweis (mit eigenem Beleg). */
   ohneVerbrauch:
-    | { art: 'satz_aus_kw'; faktor: number }
-    | { art: 'verbrauch_aus_kw'; kwDivisor: number; zuschlagBenzinUndAndere: number; zuschlagDiesel: number };
+    | ({ art: 'satz_aus_kw'; faktor: number } & Beleg)
+    | ({
+        art: 'verbrauch_aus_kw';
+        kwDivisor: number;
+        zuschlagBenzinUndAndere: number;
+        zuschlagDiesel: number;
+      } & Beleg);
   /** Erdgas: 1 Nm³ entspricht so vielen Litern Benzin; null = nicht geregelt. */
   erdgasNm3JeLiterBenzin: number | null;
   co2Malus: readonly MalusStufe[];
@@ -154,10 +163,10 @@ export interface VerbrauchPeriode extends PeriodeBasis {
   bonusSummeMaxEuro: number | null;
   /** Diesel mit Partikelausstoß über dem Grenzwert: Malus. */
   dieselPartikelMalus: { grenzwertGProKm: number; euro: number } | null;
-  /** Ohne CO2-Wert (nur für Bonus/Malus relevant). */
+  /** Ohne CO2-Wert (nur für Bonus/Malus relevant; mit eigenem Beleg). */
   ohneCo2:
-    | { art: 'kw_malus'; euroProKw: number; abKw: number }
-    | { art: 'verbrauch'; faktorBenzinUndAndere: number; faktorDiesel: number }
+    | ({ art: 'kw_malus'; euroProKw: number; abKw: number } & Beleg)
+    | ({ art: 'verbrauch'; faktorBenzinUndAndere: number; faktorDiesel: number } & Beleg)
     | null;
   /** § 14a (PKW-2008a): Diesel-Partikel-Bonus/-Malus. `bonusEuro` = anzuwendender Wert (RIS). */
   partikel14a: {

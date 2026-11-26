@@ -210,7 +210,7 @@ describe('Stichprobe: Werte aus den Tabellen des Recherche-Dokuments (hart codie
       malusProzentDerBg: 1.5,
       malusMaxEuro: 300,
     });
-    expect(p.ohneVerbrauch).toEqual({ art: 'satz_aus_kw', faktor: 0.2 });
+    expect(p.ohneVerbrauch).toMatchObject({ art: 'satz_aus_kw', faktor: 0.2 });
     expect(p.erhoehungsbetrag).toMatchObject({ prozent: 20, basis: 'grundbetrag', anzusetzen: false });
   });
 
@@ -227,15 +227,15 @@ describe('Stichprobe: Werte aus den Tabellen des Recherche-Dokuments (hart codie
     expect(p.oekoBonus?.maxEuro).toBe(500);
     expect(p.bonusSummeMaxEuro).toBe(500);
     expect(p.dieselPartikelMalus).toEqual({ grenzwertGProKm: 0.005, euro: 300 });
-    expect(p.ohneCo2).toEqual({ art: 'kw_malus', euroProKw: 20, abKw: 100 });
+    expect(p.ohneCo2).toMatchObject({ art: 'kw_malus', euroProKw: 20, abKw: 100 });
     expect(p.erhoehungsbetrag.basis).toBe('grundbetrag');
   });
 
   it('PKW-2009: Erhöhungsbetrag auf Grundbetrag ± Bonus/Malus, Ersatz-CO2 und Ersatz-Verbrauch', () => {
     const p = verbrauch(byId('PKW-2009'));
     expect(p.erhoehungsbetrag.basis).toBe('grundbetrag_und_bonus_malus');
-    expect(p.ohneCo2).toEqual({ art: 'verbrauch', faktorBenzinUndAndere: 25, faktorDiesel: 28 });
-    expect(p.ohneVerbrauch).toEqual({
+    expect(p.ohneCo2).toMatchObject({ art: 'verbrauch', faktorBenzinUndAndere: 25, faktorDiesel: 28 });
+    expect(p.ohneVerbrauch).toMatchObject({
       art: 'verbrauch_aus_kw',
       kwDivisor: 10,
       zuschlagBenzinUndAndere: 3,
@@ -265,7 +265,7 @@ describe('Stichprobe: Werte aus den Tabellen des Recherche-Dokuments (hart codie
     expect(p.malus).toEqual([{ schwelleGramm: 250, euroProGramm: 20 }]);
     expect(p.abzugsposten).toEqual({ dieselEuro: 350, andereEuro: 450 });
     expect(p.umweltbonus).toMatchObject({ maxEuro: 600, stattAbzugsposten: true });
-    expect(p.ohneCo2).toEqual([
+    expect(p.ohneCo2).toMatchObject([
       { art: 'verbrauch', faktorBenzinUndAndere: 25, faktorDiesel: 28 },
       { art: 'kw', faktor: 2 },
     ]);
@@ -294,7 +294,7 @@ describe('Stichprobe: Werte aus den Tabellen des Recherche-Dokuments (hart codie
       mindestsatzGiltBei: ['kw_wahl'],
     });
     expect(p.nefzSonderregel).toMatchObject({ art: 'fruehere_rechtslage', docId: 'PKW-2016' });
-    expect(p.ohneCo2).toEqual([{ art: 'kw', faktor: 2 }]);
+    expect(p.ohneCo2).toMatchObject([{ art: 'kw', faktor: 2 }]);
   });
 
   it('PKW-2021b bis PKW-2029: Abzugswerte, Höchstsätze, Malus', () => {
@@ -402,10 +402,61 @@ describe('Stichprobe: Werte aus den Tabellen des Recherche-Dokuments (hart codie
       expect(p.hoechstsatz.prozent, id).toBe(max);
       expect(p.malus, id).toEqual([{ schwelleGramm: 150, euroProGramm: 20 }]);
       expect(p.abzugsposten, id).toBeNull();
-      expect(p.ohneCo2, id).toEqual([{ art: 'hubraum', abzugCm3: 100, faktor: 0.02 }]);
+      expect(p.ohneCo2, id).toMatchObject([{ art: 'hubraum', abzugCm3: 100, faktor: 0.02 }]);
     }
     expect(co2(byId('MR-2020')).kleinkraftrad).toEqual({ bisCm3: 125, folge: 'satz_null' });
     expect(co2(byId('MR-2021b')).kleinkraftrad).toEqual({ bisCm3: 125, folge: 'nicht_steuerbar' });
+  });
+});
+
+describe('Feld-Status der Ersatzregeln (ohne CO2 / ohne Verbrauch)', () => {
+  const UEBERTRAGEN =
+    'aus R10 (einzige Fassung 01.03.2014–29.10.2019) übertragen; im Recherche-Dokument nur für PKW-2014 ausdrücklich genannt';
+
+  it('PKW-2014 belegt; PKW-2015 und PKW-2016 aus R10 übertragen und nicht_verifiziert', () => {
+    const p14 = co2(byId('PKW-2014'));
+    expect(p14.ohneCo2.map((r) => [r.art, r.status])).toEqual([
+      ['verbrauch', 'belegt'],
+      ['kw', 'belegt'],
+    ]);
+    for (const id of ['PKW-2015', 'PKW-2016']) {
+      const p = co2(byId(id));
+      expect(p.status, id).toBe('belegt');
+      expect(p.ohneCo2, id).toEqual([
+        {
+          art: 'verbrauch',
+          faktorBenzinUndAndere: 25,
+          faktorDiesel: 28,
+          quelle: UEBERTRAGEN,
+          stand: '2026-11-26',
+          status: 'nicht_verifiziert',
+        },
+        { art: 'kw', faktor: 2, quelle: UEBERTRAGEN, stand: '2026-11-26', status: 'nicht_verifiziert' },
+      ]);
+    }
+  });
+
+  it('PKW-2008b: Ersatz ohne Verbrauchsnachweis aus R1 übertragen, nicht_verifiziert', () => {
+    const p = verbrauch(byId('PKW-2008b'));
+    expect(p.ohneVerbrauch.status).toBe('nicht_verifiziert');
+    expect(p.ohneVerbrauch.quelle).toMatch(/übertragen; im Recherche-Dokument nur für PKW-2008a/);
+  });
+
+  it('jede Ersatzregel hat einen Beleg und ist nie stärker belegt als ihre Periode', () => {
+    for (const p of NOVA_PERIODEN) {
+      const regeln =
+        p.formel === 'co2'
+          ? [...p.ohneCo2]
+          : p.formel === 'verbrauch'
+            ? [p.ohneVerbrauch, ...(p.ohneCo2 ? [p.ohneCo2] : [])]
+            : [];
+      for (const r of regeln) {
+        expect(r.quelle.trim().length, p.docId).toBeGreaterThan(0);
+        expect(r.stand, p.docId).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+        expect(['belegt', 'schaetzwert', 'nicht_verifiziert']).toContain(r.status);
+        if (p.status === 'nicht_verifiziert') expect(r.status, p.docId).toBe('nicht_verifiziert');
+      }
+    }
   });
 });
 

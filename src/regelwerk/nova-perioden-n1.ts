@@ -8,9 +8,10 @@ import {
   STAND,
   UEBERGANG_2021B,
   UEBERGANG_2025B,
-  OHNE_CO2_KW,
+  beleg,
   hoechstsatz,
   jahreswechsel,
+  ohneCo2Kw,
 } from './nova-perioden-gemeinsam';
 import type { Co2Periode, NefzSonderregel, VerweisPeriode } from './types';
 
@@ -54,7 +55,11 @@ const N1_CO2 = {
   mindestsatzNullStatus: 'nicht_verifiziert',
   abzugsposten: { dieselEuro: 350, andereEuro: 350 },
   umweltbonus: null,
-  ohneCo2: [OHNE_CO2_KW],
+  ohneCo2: [
+    ohneCo2Kw(
+      beleg('NoVAG § 6 idF R12 (NOR40230676); Recherche-Dokument N1-2021b (N1-2022 bis N1-2025a: „wie oben")'),
+    ),
+  ],
   nefz127Ersatz: false,
   wohnmobilSA: null,
   kleinkraftrad: null,
