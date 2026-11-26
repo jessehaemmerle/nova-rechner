@@ -20,3 +20,4 @@ export {
   type NovaGebrauchtErgebnis,
   type RechtslageEingabe,
 } from './wertminderung';
+export { berechneZollUndEust, type ZollEingabe, type ZollErgebnis } from './zoll';
