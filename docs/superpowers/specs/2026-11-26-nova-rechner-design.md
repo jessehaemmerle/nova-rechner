@@ -123,6 +123,7 @@ Browser ── Formular/Ergebnis (React, Live-Engine) ─┐
 
 ## 9. Etappen
 
+1a. Recherche NoVA-Rechtslage-Perioden 2008 bis heute (siehe 11a), Regelwerk-Datenmodell mit Perioden.
 1. Repo-Gerüst, Regelwerk-Daten, Engine + Tests (Pkw/E-Pkw/Motorrad/N1/Wohnmobil, EU + Drittland).
 2. UI + Ergebnis + Design (Privatmodus), FX-Endpunkt.
 3. Vergleich, URL-Teilen, lokales Speichern.
@@ -145,6 +146,22 @@ Browser ── Formular/Ergebnis (React, Live-Engine) ─┐
 - EUSt-Verzollungsort als eigenes Eingabefeld (Standard Österreich/T1).
 - Modellannahmen zu Zollwert/NoVA-BG sind sichtbar als „Annahme" markiert.
 - Kein Server-Speicher von Eingaben; Teilen nur über URL-State.
+- **Wertminderung EU-Gebrauchtimport:** Pro vollem abgelaufenem Jahr seit Erstzulassung werden Malus **und** 350-€-Abzugsposten um ein Achtel gekürzt (0 Jahre → keine Kürzung; ab 7 Jahren bleibt ein Achtel, d. h. Faktor = max(1/8, 1 − Jahre/8)). Ist der Neuwagenwert bekannt, gilt stattdessen das Verhältnis aktueller BG / Neuwagenwert. Wortlaut der BMF-Seite „Steuersatz" ist bei der Umsetzung gegenzulesen und die Golden-Tests sind daran auszurichten.
+- **Händlermodus, NoVA:** NoVA wird beim Import/Erwerb entrichtet und ist Teil der Kostenbasis (keine Neuberechnung beim Weiterverkauf). Verkaufspreis netto = Netto-Gesamtkosten (inkl. NoVA, ohne abziehbare USt) × (1 + Marge) bzw. + Marge in €; Verkaufspreis brutto = netto + 20 % USt. Kein zirkulärer Bezug. Die Vereinfachung wird im UI und im PDF-Hinweis genannt.
+- **EU-Einkauf, ausländische USt:** Eingabeart je Fahrzeug: `Netto`, `Brutto` (mit USt-Satz des Verkäuferlandes, Länder-Tabelle mit Stand als Vorbelegung, überschreibbar) oder `Privatverkauf ohne USt`.
+- **Charge:** nur Drittland-Importe (Container/RoRo-Sammeltransport). Je Fahrzeug: Art, Preis/Währung, CO2/Hubraum, Datum, Zollsatz. Gemeinsam: Route, Wechselkurs-Stand, Container-Fixkosten. Gemischte Fahrzeugarten sind erlaubt. Verteilung der Fixkosten nach Wert (Standard) oder gleichmäßig.
+- **Betrieb:** Image für amd64 und arm64 baubar (Debian-Chromium); Betrieb unter Domain-Root, optional `BASE_PATH` als Build-Argument; Client-IP für das Rate-Limit nur aus `X-Forwarded-For`, wenn `TRUST_PROXY=true`; gleichzeitige PDF-Renderings per `PDF_CONCURRENCY` (Standard 1).
+- **Währung bei Nebenkosten:** Jedes Kostenfeld hat EUR als Standard und eine wählbare Währung (derselbe Kurs). Der EZB-Tageskurs ist eine **Modellannahme** (die Zollbehörde verwendet eigene Monatskurse); im Ergebnis als „Annahme" markiert.
+
+## 11a. Entscheidung des Auftraggebers: Erstzulassungsjahre
+
+**Der EU-Gebrauchtimport deckt alle Erstzulassungsjahre ab 2008 mit der jeweils gültigen NoVA-Rechtslage ab** (Auftraggeber-Entscheidung; Empfehlung war „ab 7/2021"). Folgen für den Plan:
+
+- Das Regelwerk wird in **Rechtslage-Perioden** geführt (mind.: ab 7/2025, 7/2021–6/2025, NEFZ-Zeit mit CO2-Formel/Malus/Bonus, Zeit davor mit Verbrauchsformel). Jede Periode hat eigene Formel, Abzugswerte, Malus, Höchstsätze und **CO2-Messverfahren (NEFZ/WLTP)**; bei NEFZ-Fahrzeugen gilt der NEFZ-Eingabepfad.
+- **Etappe 1a (vor Engine-Bau): Recherche und Belegung der Perioden** anhand BMF-Seiten (u. a. „Rechtslage von 1. Juli 2021 bis 30. Juni 2025") und NoVAG-Fassungen im RIS. Jede Periode bekommt Quelle und Status `belegt` / `nicht verifiziert`; nicht belegbare Perioden werden **nicht stillschweigend gerechnet**, sondern im UI als „nicht verifiziert" gekennzeichnet.
+- Erstzulassung **vor 2008**: Warnung und keine verbindliche Berechnung (nur Hinweis auf Finanzamt/Importeur).
+- Golden-Tests je Periode und Periodengrenze (Stichtage), jeweils mit belegten Beispielwerten.
+- Risiko: Für ältere Perioden sind belastbare Online-Quellen schwerer zu finden; der Aufwand ist hoch und das Ergebnis kann einzelne Perioden als „nicht verifiziert" lassen. Das ist ein bewusst akzeptiertes Risiko.
 
 ## 12. Dem Builder überlassen
 
