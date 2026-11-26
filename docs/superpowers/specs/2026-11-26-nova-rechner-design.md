@@ -170,3 +170,13 @@ UI-Komponentenbibliothek (z. B. shadcn/Radix + Tailwind), Chart-Bibliothek, URL-
 ## 13. Quellen (Stand der Recherche 2026-11-26)
 
 BMF „NoVA – Rechtslage ab 1. Juli 2025", „NoVA-Steuersatz", „Steuergegenstand", „Befreiung", „Erhebung der NoVA", „Fahrzeugimport aus Drittstaaten", „Fahrzeugerwerb aus EU-Mitgliedstaaten"; oesterreich.gv.at „Kfz-Import aus Drittländern"; ÖAMTC „Eigenimport". Nicht verifiziert: Zollsätze für Lieferwagen/kleine Motorräder, EUSt-Sätze anderer EU-Länder, Behördengebühren, Frachtpreise.
+
+## 14. Korrekturen aus der Rechtslage-Recherche (2026-11-26, siehe `docs/superpowers/research/nova-perioden.md`)
+
+Die Recherche (Task 2, Quellen: BMF-Seiten und NoVAG-Fassungen über das RIS) hat folgende Punkte dieser Spec präzisiert; das Recherche-Dokument ist für die Perioden maßgeblich:
+- Übergangsregel „1.12./1.4." (§ 5.2) gilt nur für Jahreswechsel ab 2022; frühere Reformstichtage haben eigene Fristen.
+- Wohnmobil-Mindestsatz 16 % gilt nur, wenn der Satz auf 2 × kW beruht.
+- Ersatzwert 1,27 × NEFZ gilt erst ab 30.7.2026; davor gilt kW × 2 laut Recherche-Dokument.
+- N1 vor 1.7.2021 ist nur bei Zolltarifposition 8703 steuerbar (Eingabe-Bestätigung nötig).
+- Stichtage nach 31.12.2029: nicht geregelt → Warnung (BMF nennt Werte nur bis 2029).
+- Perioden vor 3/2014 sind `nicht_verifiziert`; ein 20-%-Erhöhungsbetrag bei EU-Eigenimporten wird nicht angesetzt (EuGH C-433/09, Praxis umstritten).
