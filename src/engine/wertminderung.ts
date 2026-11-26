@@ -26,7 +26,7 @@ import {
   type PeriodenArt,
   type Uebergang,
 } from '@/regelwerk';
-import { pruefeIsoDatum } from '@/regelwerk/fehler';
+import { datum, istSchaltjahr, teile } from './datum';
 import { EingabeFehler } from './fehler';
 import { berechneNova } from './nova';
 import { schlechterer, zahl, type NovaEingabe, type NovaErgebnis, type NovaKuerzung } from './nova-typen';
@@ -250,22 +250,4 @@ export function berechneNovaGebraucht(e: NovaEingabe, ctx: GebrauchtKontext): No
     kuerzungUmfang: kuerzung?.umfang ?? null,
     uebergang,
   };
-}
-
-/** Prüft ein ISO-Datum (`pruefeIsoDatum`); ungültig → EingabeFehler statt TypeError. */
-function datum(name: string, v: string): string {
-  try {
-    pruefeIsoDatum(v);
-  } catch {
-    throw new EingabeFehler(`${name}: ungültiges Datum „${v}" (erwartet: JJJJ-MM-TT).`);
-  }
-  return v;
-}
-
-function teile(iso: string): [number, number, number] {
-  return [Number(iso.slice(0, 4)), Number(iso.slice(5, 7)), Number(iso.slice(8, 10))];
-}
-
-function istSchaltjahr(j: number): boolean {
-  return (j % 4 === 0 && j % 100 !== 0) || j % 400 === 0;
 }

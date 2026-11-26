@@ -1,6 +1,13 @@
 export { EingabeFehler } from './fehler';
 export { runde2, rundeProzent } from './runde';
 export {
+  AT_UST_SATZ,
+  berechneEuUst,
+  istNeufahrzeug,
+  nettoKaufpreis,
+  type KaufpreisArt,
+} from './eu-import';
+export {
   berechneMitPeriode,
   berechneNova,
   type Ersatzwert,
