@@ -11,6 +11,7 @@ export {
 } from './nova';
 export {
   berechneNovaGebraucht,
+  istJahrestag,
   rechtslageStichtag,
   volleJahre,
   wertminderungsFaktor,

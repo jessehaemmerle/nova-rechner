@@ -213,10 +213,20 @@ describe('rechtslageStichtag', () => {
     ).toBe('2026-03-25');
   });
 
-  it('EU ohne Erstzulassung, Erstzulassung nach Zulassung oder in der Zukunft → EingabeFehler', () => {
-    expect(() => rechtslageStichtag({ herkunft: 'EU', zulassung: '2026-03-25', heute: HEUTE })).toThrow(
-      EingabeFehler,
-    );
+  it('EU-Neufahrzeug ohne Erstzulassung im Ausland (ig. Erwerb): Grundregel mit Übergangsregel → 2025-12-31', () => {
+    expect(
+      rechtslageStichtag({
+        herkunft: 'EU',
+        zulassung: '2026-03-25',
+        vertrag: '2025-11-10',
+        lieferung: '2026-03-20',
+        heute: HEUTE,
+      }),
+    ).toBe('2025-12-31');
+    expect(rechtslageStichtag({ herkunft: 'EU', zulassung: '2026-03-25', heute: HEUTE })).toBe('2026-03-25');
+  });
+
+  it('Erstzulassung nach Zulassung oder in der Zukunft → EingabeFehler', () => {
     expect(() =>
       rechtslageStichtag({ herkunft: 'EU', erstzulassung: '2026-03-26', zulassung: '2026-03-25', heute: HEUTE }),
     ).toThrow(EingabeFehler);
@@ -294,7 +304,98 @@ describe('berechneNovaGebraucht', () => {
     expect(genau.betrag).toBe(4075);
     expect(kurz.volleJahre).toBe(3);
     expect(kurz.wertminderungsFaktor).toBe(0.625);
-    expect(kurz.betrag).toBe(3800 + 550 * 0.625);
+    expect(kurz.betrag).toBe(4143.75);
+  });
+
+  it('Jahrestag-Warnung: genau am Jahrestag vorhanden, einen Tag davor/danach nicht; Status unverändert', () => {
+    const ctx = { herkunft: 'EU' as const, erstzulassung: '2022-03-10', heute: HEUTE };
+    const e = pkw(20000, { co2Wltp: 200 });
+    const am = berechneNovaGebraucht(e, { ...ctx, zulassung: '2026-03-10' });
+    const davor = berechneNovaGebraucht(e, { ...ctx, zulassung: '2026-03-09' });
+    const danach = berechneNovaGebraucht(e, { ...ctx, zulassung: '2026-03-11' });
+    expect(am.betrag).toBe(4075);
+    expect(am.warnungen.join(' ')).toMatch(/Jahrestag.*4 vollen Jahren.*ein Jahr weniger \(3\)/);
+    expect(am.status).toBe('belegt');
+    expect(davor.betrag).toBe(4143.75);
+    expect(davor.warnungen.join(' ')).not.toMatch(/Jahrestag/);
+    expect(danach.betrag).toBe(4075);
+    expect(danach.warnungen.join(' ')).not.toMatch(/Jahrestag/);
+  });
+
+  it('Jahrestag-Warnung bei Erstzulassung 29.2.: am 28.2. eines Nicht-Schaltjahres, nicht am 1.3.', () => {
+    const ctx = { herkunft: 'EU' as const, erstzulassung: '2020-02-29', heute: HEUTE };
+    const e = pkw(20000, { co2Wltp: 200 });
+    const am = berechneNovaGebraucht(e, { ...ctx, zulassung: '2021-02-28' });
+    const danach = berechneNovaGebraucht(e, { ...ctx, zulassung: '2021-03-01' });
+    expect(am.warnungen.join(' ')).toMatch(/Jahrestag.*29\.2\./);
+    expect(am.status).toBe('belegt');
+    expect(danach.warnungen.join(' ')).not.toMatch(/Jahrestag/);
+  });
+
+  it('Jahrestag ohne Wirkung bei bekanntem Neuwagenwert → keine Warnung', () => {
+    const r = berechneNovaGebraucht(pkw(20000, { co2Wltp: 200 }), {
+      herkunft: 'EU',
+      erstzulassung: '2022-03-10',
+      zulassung: '2026-03-10',
+      neuwagenwert: 40000,
+      heute: HEUTE,
+    });
+    expect(r.warnungen.join(' ')).not.toMatch(/Jahrestag/);
+  });
+
+  it('EU-Neufahrzeug ohne Erstzulassung im Ausland im Übergangsfenster → PKW-2025b, 7.450,00, Faktor 1', () => {
+    // PKW-2025b: (200 − 94) / 5 = 21,2 → 21 %; 4.200 + Malus (200 − 155) × 80 = 3.600 − AP 350 = 7.450
+    const r = berechneNovaGebraucht(pkw(20000, { co2Wltp: 200 }), {
+      herkunft: 'EU',
+      zulassung: '2026-03-25',
+      vertrag: '2025-11-10',
+      lieferung: '2026-03-20',
+      heute: HEUTE,
+    });
+    expect(r.rechtslageStichtag).toBe('2025-12-31');
+    expect(r.periodeId).toBe('PKW-2025b');
+    expect(r.satzProzent).toBe(21);
+    expect(r.betrag).toBe(7450);
+    expect(r.wertminderungsFaktor).toBe(1);
+    expect(r.volleJahre).toBeNull();
+    expect(r.kuerzungUmfang).toBeNull();
+    expect(r.uebergang?.vorherigeDocId).toBe('PKW-2025b');
+    expect(r.hinweise.join(' ')).toMatch(/Neufahrzeug/);
+  });
+
+  it('EU-Neufahrzeug ohne Übergangsregel → PKW-2026a, 7.650,00', () => {
+    // PKW-2026a: (200 − 91) / 5 = 21,8 → 22 %; 4.400 + 3.600 − 350 = 7.650
+    const r = berechneNovaGebraucht(pkw(20000, { co2Wltp: 200 }), {
+      herkunft: 'EU',
+      zulassung: '2026-03-25',
+      heute: HEUTE,
+    });
+    expect(r.periodeId).toBe('PKW-2026a');
+    expect(r.betrag).toBe(7650);
+  });
+
+  it('EU-Gebrauchtimport mit Vertrag/Lieferung: Rechtslage nach Erstzulassung, Warnung „unberücksichtigt"', () => {
+    const r = berechneNovaGebraucht(pkw(20000, { co2Wltp: 200 }), {
+      herkunft: 'EU',
+      erstzulassung: '2022-03-10',
+      zulassung: '2026-11-26',
+      vertrag: '2025-11-10',
+      lieferung: '2026-03-20',
+      heute: HEUTE,
+    });
+    expect(r.rechtslageStichtag).toBe('2022-03-10');
+    expect(r.betrag).toBe(4075);
+    expect(r.warnungen.join(' ')).toMatch(/Kaufvertrags- und Lieferdatum.*unberücksichtigt/);
+  });
+
+  it('EU-Gebrauchtimport ohne Vertrag/Lieferung: keine solche Warnung', () => {
+    const r = berechneNovaGebraucht(pkw(20000, { co2Wltp: 200 }), {
+      herkunft: 'EU',
+      erstzulassung: '2022-03-10',
+      zulassung: '2026-11-26',
+      heute: HEUTE,
+    });
+    expect(r.warnungen).toEqual([]);
   });
 
   it('Schalttag-Erstzulassung 2020-02-29: am 28.2.2021 ein volles Jahr', () => {

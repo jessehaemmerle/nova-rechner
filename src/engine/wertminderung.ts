@@ -35,13 +35,13 @@ export type Herkunft = 'EU' | 'DRITTLAND';
 
 export interface RechtslageEingabe {
   herkunft: Herkunft;
-  /** Erstmalige Zulassung im übrigen Unionsgebiet (nur EU; bei Drittland ignoriert). */
+  /** Erstmalige Zulassung im übrigen Unionsgebiet (nur EU; fehlt sie, gilt das Fahrzeug als Neufahrzeug/ig. Erwerb; bei Drittland ignoriert). */
   erstzulassung?: string;
   /** Zulassung bzw. Lieferung im Inland (ISO). */
   zulassung: string;
-  /** Unwiderruflicher schriftlicher Kaufvertrag (Übergangsregel, nur Drittland). */
+  /** Unwiderruflicher schriftlicher Kaufvertrag (Übergangsregel; nicht bei EU-Gebrauchtimport). */
   vertrag?: string;
-  /** Lieferung bzw. innergemeinschaftlicher Erwerb (Übergangsregel, nur Drittland). */
+  /** Lieferung bzw. innergemeinschaftlicher Erwerb (Übergangsregel; nicht bei EU-Gebrauchtimport). */
   lieferung?: string;
   /** Periodenart für die Übergangsregel; Standard Pkw. */
   art?: PeriodenArt;
@@ -59,7 +59,7 @@ export interface NovaGebrauchtErgebnis extends NovaErgebnis {
   rechtslageStichtag: string;
   /** Angewendeter Faktor (1 = keine Kürzung, z. B. Drittland). */
   wertminderungsFaktor: number;
-  /** Volle Jahre seit Erstzulassung (nur EU), sonst null. */
+  /** Volle Jahre seit Erstzulassung (nur EU-Gebrauchtimport), sonst null. */
   volleJahre: number | null;
   /** Umfang der Kürzung; null, wenn nicht gekürzt (Drittland, Faktor 1). */
   kuerzungUmfang: NovaKuerzung['umfang'] | null;
@@ -101,10 +101,21 @@ export function volleJahre(von: string, bis: string): number {
   const [vy, vm, vd] = teile(a);
   const [by, bm, bd] = teile(b);
   let jahre = by - vy;
-  // Jahrestag im Jahr `by`; 29.2. → 28.2., wenn `by` kein Schaltjahr ist
-  const tagJahrestag = vm === 2 && vd === 29 && !istSchaltjahr(by) ? 28 : vd;
-  if (bm < vm || (bm === vm && bd < tagJahrestag)) jahre -= 1;
+  const tag = tagDesJahrestags(vm, vd, by);
+  if (bm < vm || (bm === vm && bd < tag)) jahre -= 1;
   return jahre;
+}
+
+/** Fällt `bis` genau auf einen Jahrestag von `von` (29.2. → 28.2. in Nicht-Schaltjahren)? */
+export function istJahrestag(von: string, bis: string): boolean {
+  const [vy, vm, vd] = teile(datum('Beginn', von));
+  const [by, bm, bd] = teile(datum('Ende', bis));
+  return by > vy && bm === vm && bd === tagDesJahrestags(vm, vd, by);
+}
+
+/** Tag des Jahrestags im Jahr `jahr`; 29.2. → 28.2., wenn `jahr` kein Schaltjahr ist. */
+function tagDesJahrestags(monat: number, tag: number, jahr: number): number {
+  return monat === 2 && tag === 29 && !istSchaltjahr(jahr) ? 28 : tag;
 }
 
 /** Rechtslage-Stichtag; siehe `ermittleRechtslage`. */
@@ -112,25 +123,39 @@ export function rechtslageStichtag(p: RechtslageEingabe): string {
   return ermittleRechtslage(p).stichtag;
 }
 
+interface Rechtslage {
+  stichtag: string;
+  uebergang: Uebergang | null;
+  /** 'erstzulassung': EU-Gebrauchtimport (R14 § 6 Abs. 8); 'grundregel': Lieferung/ig. Erwerb/Zulassung. */
+  grundlage: 'erstzulassung' | 'grundregel';
+  /** EU-Gebrauchtimport mit Vertrag/Lieferung: für die Rechtslage ohne Wirkung. */
+  vertragIgnoriert: boolean;
+}
+
 /**
- * EU: Erstzulassungsdatum (Übergangsregeln des Kaufs im Inland greifen nicht, die Rechtslage ist durch
- * die Erstzulassung fixiert). Drittland: Zulassungsdatum; liegt es in einer Periode mit Übergangsregel
- * und wurden Vertrag vor `vertragVor` und Lieferung vor `lieferungVor` (beide ausschließlich)
+ * EU mit Erstzulassung im übrigen Unionsgebiet (Gebrauchtimport): Erstzulassungsdatum; die
+ * Übergangsregel des Erwerbs im Inland greift nicht, Vertrag/Lieferung werden ignoriert (Warnung in
+ * `berechneNovaGebraucht`). Grundregel (Drittland, EU-Neufahrzeug ohne Zulassung im Ausland =
+ * ig. Erwerb): Zulassungs- bzw. Erwerbsdatum; liegt es in einer Periode mit Übergangsregel und wurden
+ * Vertrag vor `vertragVor` und Lieferung/ig. Erwerb vor `lieferungVor` (beide ausschließlich)
  * angegeben, gilt der letzte Tag der Vorperiode. Ohne Vertrag oder Lieferung keine Übergangsregel.
  */
-function ermittleRechtslage(p: RechtslageEingabe): { stichtag: string; uebergang: Uebergang | null } {
+function ermittleRechtslage(p: RechtslageEingabe): Rechtslage {
   const zulassung = datum('Zulassung', p.zulassung);
-  if (p.herkunft === 'EU') {
-    if (p.erstzulassung === undefined) {
-      throw new EingabeFehler('EU-Import: Datum der Erstzulassung im übrigen Unionsgebiet fehlt.');
-    }
+  if (p.herkunft === 'EU' && p.erstzulassung !== undefined) {
     const ez = datum('Erstzulassung', p.erstzulassung);
     const heute = datum('Heute', p.heute ?? new Date().toISOString().slice(0, 10));
     if (ez > heute) throw new EingabeFehler(`Erstzulassung ${ez} liegt in der Zukunft.`);
     if (ez > zulassung) throw new EingabeFehler(`Erstzulassung ${ez} liegt nach der Zulassung ${zulassung}.`);
-    return { stichtag: ez, uebergang: null };
+    return {
+      stichtag: ez,
+      uebergang: null,
+      grundlage: 'erstzulassung',
+      vertragIgnoriert: p.vertrag !== undefined || p.lieferung !== undefined,
+    };
   }
-  if (p.vertrag === undefined || p.lieferung === undefined) return { stichtag: zulassung, uebergang: null };
+  const ohne: Rechtslage = { stichtag: zulassung, uebergang: null, grundlage: 'grundregel', vertragIgnoriert: false };
+  if (p.vertrag === undefined || p.lieferung === undefined) return ohne;
   const vertrag = datum('Kaufvertrag', p.vertrag);
   const lieferung = datum('Lieferung', p.lieferung);
   if (vertrag > lieferung) {
@@ -138,10 +163,10 @@ function ermittleRechtslage(p: RechtslageEingabe): { stichtag: string; uebergang
   }
   const art = p.art ?? 'pkw';
   const u = selectNovaPeriode(art, zulassung).uebergang;
-  if (!u || !(vertrag < u.vertragVor && lieferung < u.lieferungVor)) return { stichtag: zulassung, uebergang: null };
+  if (!u || !(vertrag < u.vertragVor && lieferung < u.lieferungVor)) return ohne;
   const vorher = NOVA_PERIODEN.find((x) => x.art === art && x.docId === u.vorherigeDocId);
   if (!vorher?.bis) throw new RegelwerkLuecke(`Vorperiode ${u.vorherigeDocId} ist im Regelwerk nicht hinterlegt.`);
-  return { stichtag: vorher.bis, uebergang: u };
+  return { ...ohne, stichtag: vorher.bis, uebergang: u };
 }
 
 /**
@@ -156,7 +181,7 @@ export function berechneNovaGebraucht(e: NovaEingabe, ctx: GebrauchtKontext): No
     throw new EingabeFehler('Kürzung wird aus Herkunft und Erstzulassung bestimmt und darf nicht vorgegeben werden.');
   }
   const art = periodenArt(e.art);
-  const { stichtag, uebergang } = ermittleRechtslage({ ...ctx, art });
+  const { stichtag, uebergang, grundlage, vertragIgnoriert } = ermittleRechtslage({ ...ctx, art });
   // Fehlende Rechtslage zuerst melden (Warntext aus selectNovaPeriode), vor allen Folgeprüfungen.
   selectNovaPeriode(art, stichtag);
 
@@ -167,7 +192,7 @@ export function berechneNovaGebraucht(e: NovaEingabe, ctx: GebrauchtKontext): No
   let jahre: number | null = null;
   let kuerzung: NovaKuerzung | undefined;
 
-  if (ctx.herkunft === 'EU') {
+  if (ctx.herkunft === 'EU' && grundlage === 'erstzulassung') {
     jahre = volleJahre(stichtag, ctx.zulassung);
     faktor = wertminderungsFaktor(jahre, e.bg, ctx.neuwagenwert);
     zusatzHinweise.push(
@@ -177,6 +202,16 @@ export function berechneNovaGebraucht(e: NovaEingabe, ctx: GebrauchtKontext): No
           : `${jahre} volle Jahre bis zur Zulassung am ${ctx.zulassung} (Jahrestag zählt als vollendet)`
       } → Faktor ${zahl(faktor)}.`,
     );
+    if (ctx.neuwagenwert === undefined && istJahrestag(stichtag, ctx.zulassung)) {
+      zusatzWarnungen.push(
+        `Zulassung am ${ctx.zulassung} fällt genau auf den Jahrestag der Erstzulassung (${stichtag}): gerechnet mit ${jahre} vollen Jahren (Jahrestag zählt als vollendet${stichtag.endsWith('-02-29') ? '; bei Erstzulassung am 29.2. gilt in Nicht-Schaltjahren der 28.2. als Jahrestag' : ''}). Bei strenger Lesart („volles abgelaufenes Jahr") wäre es ein Jahr weniger (${jahre - 1}).`,
+      );
+    }
+    if (vertragIgnoriert) {
+      zusatzWarnungen.push(
+        'EU-Gebrauchtimport: Rechtslage nach der Erstzulassung im übrigen Unionsgebiet; Kaufvertrags- und Lieferdatum (Übergangsregel) bleiben unberücksichtigt.',
+      );
+    }
     if (faktor < 1) {
       const u = selectWertentwicklungUmfang(stichtag);
       kuerzung = { faktor, umfang: u.gekuerzt === 'saldo_malus_abzugsposten' ? 'malus_und_abzug' : 'bonus_malus' };
@@ -187,6 +222,10 @@ export function berechneNovaGebraucht(e: NovaEingabe, ctx: GebrauchtKontext): No
         );
       }
     }
+  } else if (ctx.herkunft === 'EU') {
+    zusatzHinweise.push(
+      `EU-Neufahrzeug ohne Zulassung im übrigen Unionsgebiet (ig. Erwerb): Rechtslage der Zulassung bzw. des Erwerbs im Inland (${stichtag}); keine Wertentwicklung.`,
+    );
   } else {
     zusatzHinweise.push(
       `Drittland-Import: Rechtslage der Zulassung bzw. Lieferung im Inland (${stichtag}); volle Malus/Abzugsposten, keine Wertentwicklung.`,
